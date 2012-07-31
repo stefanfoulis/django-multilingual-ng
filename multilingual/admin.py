@@ -143,16 +143,28 @@ class MultilingualInlineAdmin(admin.TabularInline):
     
     fill_check_field = None
     #TODO: add some nice template
-    
-    def __init__(self, parent_model, admin_site):
-        super(MultilingualInlineAdmin, self).__init__(parent_model, admin_site)
+
+    def get_formset(self, request, obj=None, **kwargs):
+        use_language = GLL.language_code
         if hasattr(self, 'use_fields'):
             # go around admin fields structure validation
-            self.fields = self.use_fields
-        
-    def get_formset(self, request, obj=None, **kwargs):
+            meta = self.model._meta
+            if not hasattr(meta, 'translated_fields'):
+                if hasattr(meta, 'translation_model'):
+                    meta = meta.translation_model._meta
+                else:
+                    raise Exception('not a translated model')
+            translated_fields = meta.translated_fields.keys()
+            new_fields = []
+            for field in self.use_fields:
+                if field in translated_fields:
+                    new_fields.append('%s%s_%s' % (MULTILINGUAL_INLINE_PREFIX, field, use_language))
+                #                    new_fields.append('%s%s_%s' % (MULTILINGUAL_INLINE_PREFIX, field, GLL.language_code))
+                else:
+                    new_fields.append(field)
+            self.fields = kwargs['fields'] = new_fields
         FormSet = super(MultilingualInlineAdmin, self).get_formset(request, obj, **kwargs)
-        FormSet.use_language = GLL.language_code
+        FormSet.use_language = use_language
         FormSet.ml_fields = {}
         for name, field in get_translated_fields(self.model, GLL.language_code):
             fieldname = '%s%s' % (MULTILINGUAL_INLINE_PREFIX, name)
