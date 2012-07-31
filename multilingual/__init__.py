@@ -11,7 +11,7 @@ Note about version numbers:
 import warnings
 
 class LazyInit(object):
-    VERSION = ('0', '1', '45')
+    VERSION = ('0', '1', '47')
     __version__ = '.'.join(VERSION)
     
     __deprecated__ = {
